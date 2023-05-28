@@ -1,3 +1,7 @@
+/**
+ * @Author George Pustovalov
+ * @Project TG_BotToRecognizeTransport
+ */
 var TelegramBot = require('node-telegram-bot-api');
 // Устанавливаем токен, который выдавал нам бот
 var token = "6258443712:AAHuuH6eM_NN8KenvbYfJsJn2LlIb-5YQL0";
@@ -19,9 +23,6 @@ bot.setMyCommands([
 ).catch(err =>{
     console.log(" bot.setMyCommands err ",err)
 })
-
-
-
 
 
 
