@@ -4,36 +4,27 @@
  */
 var TelegramBot = require('node-telegram-bot-api');
 // Устанавливаем токен, который выдавал нам бот
-var token = "6258443712:AAHuuH6eM_NN8KenvbYfJsJn2LlIb-5YQL0";
+var token = "6258443712:AAHmmW3WlqTFmU6qJmLyYppR7O1BP5mqHF8";
 // Включить опрос сервера. Бот должен обращаться к серверу Telegram, чтобы получать актуальную информацию
 // Подробнее: https://core.telegram.org/bots/api#getupdates
-var bot = new TelegramBot(token, { polling: true });
+var bot = new TelegramBot(token, {polling: true});
 
 
-
-
-
-
-
-        const WizardScene = require('/Users/georgijpustovalov/Downloads/Projects/node_modules/telegraf/lib/scenes/wizard')
-        const Composer = require('composer');
-
-        let OCR = require('node-ts-ocr');
-        const fileManager = require('file-manager')
+        // const WizardScene = require('/Users/georgijpustovalov/Downloads/Projects/node_modules/telegraf/lib/scenes/wizard')
+        // const Composer = require('composer');
+        //
+        // let OCR = require('node-ts-ocr');
+        // const fileManager = require('file-manager')
 
         var allFunctionalitiesFlag = true
         if(allFunctionalitiesFlag == true){
 
         var imageDownload;
         let OCR = require('node-ts-ocr');
-        // const wizardScene = require('telegraf/scenes/wizard')
         var namedownloadImages;
         bot.setMyCommands([
             {command: '/start', description: 'Начало работы с ботом'},
             {command: '/upload', description: 'Загрузить фотографию'}
-            // {command: '/info', description: 'Получить информацию о статусе заявки в службу поддержки'},
-            // {command: '/escalation', description: 'Эскалировать запрос в СТП'},
-            // {command: '/test', description: 'Эскалировать запрос в СТП'}
         ]).then(r => {
             console.log(" bot.setMyCommands OK")
         }
@@ -43,181 +34,165 @@ var bot = new TelegramBot(token, { polling: true });
 
 
 
+bot. on('message', function (msg) {
 
+    console.log("user ", msg.from.id, " name ", msg.from.username);
+
+    let url = `https://api.telegram.org/bot${token}/getFile?file_id=${msg.photo[2].file_id}`;
+    console.log(url);
+
+
+    if (msg.text === "/start") {
+
+        bot.sendMessage(msg.chat.id, "<b>Приветствую</b> \n <i>Я чат-бот для распознавания маршрутов общественного транспорта</i> <em>Сделайте фотографию автобуса и отправьте ее мне, чтобы я мог Вам помочь</em>", {parse_mode: "HTML"});
+
+        return;
+    }
+
+
+    if (msg.text == "/upload") {
+        bot.sendMessage(msg.chat.id, "<b>Сделайте фотографию и отправьте ее мне - я знаю, как Вам помочь!</b>  ", {parse_mode: "HTML"})
+        return;
+    }
+
+
+    var flag = true;
+
+    if (flag == true) {
+        var fs = require('fs'),
+            request = require('request');
 
         var downloadDir = '/Users/georgijpustovalov/Downloads/Projects/public/images';
-        let something = ''
         var https = require('https')
+        bot.getFileLink(msg.photo[2].file_id).then(async (fileUri) => {
 
+            let time = process.hrtime();
+            let extension = fileUri.split('.').pop();
+            let newName = `${time[0]}${time[1]}.${extension}`;
+            let file = fs.createWriteStream(`${downloadDir}/${newName}`);
+            let request = await https.get(fileUri, (response) => {
+                response.pipe(file);
 
+            });
 
+            console.log("Image download - ", newName);
+            namedownloadImages = newName;
+            imageDownload = "/Users/georgijpustovalov/Downloads/Projects/public/images/" + newName;
+            file.on('finish', () => {
+                // console.log('msg.text = ', file)
+                bot.sendMessage(msg.chat.id, "<b>Фотография принята!</b> ", {parse_mode: "HTML"});
+                bot.sendMessage(msg.chat.id, "<b>Обрабатываю...</b> ", {parse_mode: "HTML"});
 
+                runingScript();
 
 
+            })
+        });
+    }
+    ;
 
 
+    var express = require('express');
+    var app = express();
 
+    async function runingScript() {
 
+        console.log(imageDownload)
 
+        textOcr = OCR.Ocr.extractText(imageDownload);
 
-        bot. on('message', function (msg) {
+        var exec = require('child_process').exec;
 
-            console.log("user ", msg.from.id, " name ",msg.from.username);
 
-            let url = `https://api.telegram.org/bot${token}/getFile?file_id=${msg.photo[2].file_id}`;
-            console.log(url);
+        var fun = function () {
+            console.log("Child process start");
 
+            ls = exec('/Users/georgijpustovalov/Downloads/yolodetected_generatescript-main/dist/MainClassStarterExe', function (err, data) {
+                console.log(err)
+                console.log(data.toString());
+            });
 
 
-            var flag = true;
+            ls.stdout.on('data', function (data) {
 
-            if(flag == true){
-                    var fs = require('fs'),
-                        request = require('request');
+                console.log('stdout: ' + data);
+                ls.stdin.write(imageDownload + "\n", "utf-8");
+            });
 
-                var downloadDir = '/Users/georgijpustovalov/Downloads/Projects/public/images';
-                var https = require('https')
-                bot.getFileLink(msg.photo[2].file_id).then( async (fileUri) => {
 
-                    let time = process.hrtime();
-                    let extension = fileUri.split('.').pop();
-                    let newName = `${time[0]}${time[1]}.${extension}`;
-                    let file = fs.createWriteStream(`${downloadDir}/${newName}`);
-                    let request = await https.get(fileUri, (response) => {
-                        response.pipe(file);
+            ls.stdout.on('data', function (data) {
+                console.log('stdout: ' + data);
+                ls.stdin.write("bus\n", "utf-8");
+            });
 
-                    });
 
-                    console.log("Image download - ", newName);
-                    namedownloadImages = newName;
-                    imageDownload = "/Users/georgijpustovalov/Downloads/Projects/public/images/" + newName;
-                    file.on('finish', () =>{
-                        // console.log('msg.text = ', file)
-                        bot.sendMessage(msg.chat.id, "<b>Фотография принята!</b> "  , {parse_mode: "HTML"});
-                        bot.sendMessage(msg.chat.id, "<b>Обрабатываю...</b> "  , {parse_mode: "HTML"});
+            ls.stderr.on('data', function (data) {
+                console.log('stderr: ' + data)
+            });
 
-                        runingScript();
+            ls.on('exit', function (code) {
+                console.log('child process exited with code ' + code);
 
+                var resultAddedFile = getMostRecentFileNameCV2("/Users/georgijpustovalov/Downloads/webProjectCNN_jspCollab-master-2/src/main/webapp/downloadImages/loadFiles/cv2_detected_object")
+                var resultAddedFileResized = getMostRecentFileNameResizingImages("/Users/georgijpustovalov/Downloads/webProjectCNN_jspCollab-master-2/src/main/webapp/downloadImages/loadFiles/yolo_detectedImages")
+                console.log("[resultAddedFile.loger] - ", resultAddedFile);
+                console.log("[resultAddedFileResized.loger] - ", resultAddedFileResized);
 
-                    })
-                });
-            };
+                var photo = '/Users/georgijpustovalov/Downloads/webProjectCNN_jspCollab-master-2/src/main/webapp/downloadImages/loadFiles/cv2_detected_object/' + resultAddedFile;
+                bot.sendPhoto(msg.chat.id, photo, {caption: "Я распознал автобус на Вашем снимке"});
 
+                var photoResize = '/Users/georgijpustovalov/Downloads/webProjectCNN_jspCollab-master-2/src/main/webapp/downloadImages/loadFiles/yolo_detectedImages/' + resultAddedFileResized;
+                bot.sendPhoto(msg.chat.id, photoResize, {caption: "Я обрезал Ваше изображение, для того чтобы облегчить себе работу :)"});
+                bot.sendMessage(msg.chat.id, "<b>Распознаю маршрут...</b>  ", {parse_mode: "HTML"})
+                console.log("namedownloadImages ---" + namedownloadImages)
+            });
+        }
 
-            if (msg.text=="/start") {
+        fun();
 
-                bot.sendMessage(msg.chat.id, "<b>Приветствую</b> \n <i>Я чат-бот для распознавания маршрутов общественного транспорта</i>" +
-                    " \n <em>Сделайте фотографию автобуса и отправьте ее мне, чтобы я мог Вам помочь</em> \n "  , {parse_mode: "HTML"});
+    }
 
-                // return;
-            }
 
+    var exec_ocr = require('child_process').exec;
 
-            if (msg.text=="/upload") {
 
-                bot.sendMessage(msg.chat.id, "<b>Сделайте фотографию и отправьте ее мне - я знаю, как Вам помочь!</b>  " , {parse_mode: "HTML"})
+    var ocr = function () {
+        console.log("Child process start");
 
-            }
-            var express = require('express');
-            var app = express();
+        ls = exec('/Users/georgijpustovalov/Downloads/yolodetected_generatescript-main/dist/MainClassStarterExe', function (err, data) {
+            console.log(err)
+            console.log(data.toString());
+        });
 
-            async function runingScript() {
-                // var spawn = require("child_process").spawn;
-                // var process = spawn('python',["/Users/georgijpustovalov/Downloads/yolodetected_generatescript-main/dist/MainClassStarterExe",
-                //     req.query.firstname,
-                //     req.query.lastname]);
-                //
-                // process.stdout.on('data', function(data) {
-                //     res.send(data.toString());
-                // } )
-                // const child = execFile('/Users/georgijpustovalov/Downloads/Projects/MainClassStarterExe.exe', [], (error, stdout, stderr) => {
-                //     if (error) {
-                //         throw error;
-                //     }
-                //     console.log(stdout);
-                // });
 
-                // data = "/Users/georgijpustovalov/Downloads/Projects/public/images", newName;
+        ls.stdout.on('data', function (data) {
 
-                console.log(imageDownload)
+            console.log('stdout: ' + data);
+            ls.stdin.write(imageDownload + "\n", "utf-8");
+        });
 
-                // // let text = new Array();
-                // let text = {
-                //     title: "title 1",
-                // };
 
+        ls.stderr.on('data', function (data) {
+            console.log('stderr: ' + data)
+        });
 
-                textOcr = OCR.Ocr.extractText(imageDownload);
-                    // .then(result => console.log("textOcr", result))
+        ls.on('exit', function (code) {
+            console.log('child process exited with code ' + code);
 
-                // const data = {text: textOcr};
+            var resultAddedFile_ocr = getMostRecentFileNameCV2("/Users/georgijpustovalov/Downloads/ocr_invented")
+            var resultAddedFileResized_ocr = getMostRecentFileNameResizingImages("/Users/georgijpustovalov/Downloads/ocr_invented/detected_ocr")
+            console.log("[resultAddedFile_ocr.loger] - ", resultAddedFile_ocr);
+            console.log("[resultAddedFileResized_ocr.loger] - ", resultAddedFile_ocr);
 
-                //
-                // var stringify = JSON.stringify(textOcr);
-                // fs.writeFileSync("./ocrData.json", stringify, 'utf-8');
-                //
+            var photo_invent = '/Users/georgijpustovalov/Downloads/ocr_invented/' + resultAddedFile_ocr;
+            bot.sendPhoto(msg.chat.id, photo_invent, {caption: "Преобразовал ваше изображение"});
 
-                let file_path = "/Users/georgijpustovalov/Downloads/Projects/";
-                let file_name = "ocrData.json";
-
-
-                fs.writeFileSync(file_path + file_name, JSON.stringify(textOcr));
-
-                console.log("text --- ", fs);
-
-
-
-
-
-                var exec = require('child_process').exec;
-
-
-                var fun = function () {
-                    console.log("fun() start");
-
-                    ls = exec('/Users/georgijpustovalov/Downloads/yolodetected_generatescript-main/dist/MainClassStarterExe', function (err, data) {
-                        console.log(err)
-                        console.log(data.toString());
-                    });
-
-
-                    ls.stdout.on('data', function (data) {
-
-                        console.log('stdout: ' + data);
-                        ls.stdin.write(imageDownload + "\n", "utf-8");
-                    });
-
-
-                    ls.stdout.on('data', function (data) {
-                        console.log('stdout: ' + data);
-                        ls.stdin.write("bus\n", "utf-8");
-                    });
-
-
-                    ls.stderr.on('data', function (data) {
-                        console.log('stderr: ' + data)
-                    });
-
-                    ls.on('exit', function (code) {
-                        console.log('child process exited with code ' + code);
-
-                        var resultAddedFile = getMostRecentFileNameCV2("/Users/georgijpustovalov/Downloads/webProjectCNN_jspCollab-master-2/src/main/webapp/downloadImages/loadFiles/cv2_detected_object")
-
-                        console.log(resultAddedFile);
-
-                        var photo = '/Users/georgijpustovalov/Downloads/webProjectCNN_jspCollab-master-2/src/main/webapp/downloadImages/loadFiles/cv2_detected_object/' + resultAddedFile;
-                        bot.sendPhoto(msg.chat.id, photo, {caption: "Я распознал автобус на Вашем снимке"});
-
-                        var photoResize = '/Users/georgijpustovalov/Downloads/webProjectCNN_jspCollab-master-2/src/main/webapp/downloadImages/loadFiles/yolo_detectedImages/' + resultAddedFile;
-                        bot.sendPhoto(msg.chat.id, photoResize, {caption: "Я обрезал Ваше изображение, для того чтобы облегчить себе работу :)"});
-                        bot.sendMessage(msg.chat.id, "<b>Распознаю маршрут...</b>  ", {parse_mode: "HTML"})
-                        console.log("namedownloadImages ---" + namedownloadImages)
-                    });
-                }
-
-                fun();
-
-            }
+            var photo_ocr = '/Users/georgijpustovalov/Downloads/ocr_invented/' + resultAddedFileResized_ocr;
+            bot.sendMessage(msg.chat.id, photo_ocr, {caption: "Вот, что мне удалось найти"});
+            console.log("namedownloadImages ---" + namedownloadImages)
+        });
+    }
+    ocr();
 
         })
 
